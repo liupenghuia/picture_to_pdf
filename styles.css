@@ -1,0 +1,259 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: #333;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.image-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: stretch;
+}
+
+.image-item {
+    width: 100%;
+    text-align: center;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.image-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.image-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.image-item:hover img {
+    transform: scale(1.02);
+}
+
+.image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-item:hover .image-info {
+    opacity: 1;
+}
+
+.loading {
+    text-align: center;
+    color: #667eea;
+    font-style: italic;
+    font-size: 18px;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 3px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.error {
+    color: #e74c3c;
+    text-align: center;
+    padding: 30px;
+    background: rgba(231, 76, 60, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    font-size: 16px;
+}
+
+.export-button {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 1000;
+}
+
+.export-button button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.export-button button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.export-button button:active {
+    transform: translateY(0);
+}
+
+.export-button button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.stats {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 10px;
+    color: #667eea;
+}
+
+/* 打印样式 */
+@media print {
+    .export-button,
+    .header,
+    .stats {
+        display: none !important;
+    }
+    
+    @page {
+        margin: 0;
+        size: A4;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: auto;
+        background: none;
+    }
+    
+    .container {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        backdrop-filter: none;
+    }
+    
+    .image-container {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        gap: 0;
+    }
+    
+    .image-item {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        page-break-inside: avoid;
+        page-break-after: auto;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    
+    .image-item img {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        display: block;
+        page-break-inside: avoid;
+    }
+    
+    .loading, .error, .progress-bar {
+        display: none !important;
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 20px;
+        margin: 10px auto;
+    }
+    
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .export-button {
+        top: 20px;
+        right: 20px;
+    }
+    
+    .export-button button {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+} 
