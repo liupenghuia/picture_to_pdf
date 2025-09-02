@@ -16,6 +16,7 @@ class ImageToPdfConverter {
         this.currentImageNumber = 1;
         this.loadedImages = 0;
         this.totalImages = 0;
+        this.isLoading = false;
         
         this.init();
     }
@@ -43,14 +44,27 @@ class ImageToPdfConverter {
      * 加载图片
      */
     async loadImages() {
+        if (this.isLoading) return;
+        
+        this.isLoading = true;
         this.resetState();
         this.showLoading();
         
         try {
             await this.loadImagesSequentially();
             this.updateStats();
+            
+            // 如果没有加载到任何图片，显示提示
+            if (this.loadedImages === 0) {
+                this.showNoImagesMessage();
+            } else {
+                this.hideLoading();
+            }
         } catch (error) {
+            console.error('加载图片时发生错误:', error);
             this.showError('加载图片时发生错误：' + error.message);
+        } finally {
+            this.isLoading = false;
         }
     }
     
@@ -58,12 +72,27 @@ class ImageToPdfConverter {
      * 顺序加载图片
      */
     async loadImagesSequentially() {
-        while (true) {
+        let consecutiveFailures = 0;
+        const maxConsecutiveFailures = 5; // 连续失败5次后停止
+        
+        while (consecutiveFailures < maxConsecutiveFailures) {
             const imageLoaded = await this.tryLoadImage(this.currentImageNumber);
-            if (!imageLoaded) {
-                break; // 没有更多图片
+            
+            if (imageLoaded) {
+                consecutiveFailures = 0; // 重置失败计数
+                this.currentImageNumber++;
+            } else {
+                consecutiveFailures++;
+                this.currentImageNumber++;
             }
-            this.currentImageNumber++;
+            
+            // 如果连续失败次数过多，可能已经到达图片末尾
+            if (consecutiveFailures >= 3) {
+                // 再尝试几个数字，确保不是临时问题
+                if (consecutiveFailures >= maxConsecutiveFailures) {
+                    break;
+                }
+            }
         }
     }
     
@@ -118,13 +147,13 @@ class ImageToPdfConverter {
      * 获取图片大小（估算）
      */
     getImageSize(img) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        ctx.drawImage(img, 0, 0);
-        
         try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            ctx.drawImage(img, 0, 0);
+            
             return canvas.toDataURL('image/jpeg', 0.8).length * 0.75; // 估算字节数
         } catch (e) {
             return img.naturalWidth * img.naturalHeight * 4; // 估算为RGBA格式
@@ -172,7 +201,7 @@ class ImageToPdfConverter {
     updateProgress() {
         if (this.progressBar && this.progressFill) {
             const progress = (this.loadedImages / Math.max(this.currentImageNumber - 1, 1)) * 100;
-            this.progressFill.style.width = `${progress}%`;
+            this.progressFill.style.width = `${Math.min(progress, 100)}%`;
         }
     }
     
@@ -206,6 +235,40 @@ class ImageToPdfConverter {
     }
     
     /**
+     * 隐藏加载状态
+     */
+    hideLoading() {
+        const loadingElement = this.imageContainer.querySelector('.loading');
+        const progressBarElement = this.imageContainer.querySelector('.progress-bar');
+        
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+        if (progressBarElement) {
+            progressBarElement.remove();
+        }
+    }
+    
+    /**
+     * 显示无图片消息
+     */
+    showNoImagesMessage() {
+        this.imageContainer.innerHTML = `
+            <div class="error">
+                <h3>未找到图片文件</h3>
+                <p>请确保 <code>src</code> 文件夹中包含从1开始的图片文件：</p>
+                <ul style="text-align: left; display: inline-block; margin: 20px 0;">
+                    <li>1.png, 1.jpg, 1.jpeg 等</li>
+                    <li>2.png, 2.jpg, 2.jpeg 等</li>
+                    <li>3.png, 3.jpg, 3.jpeg 等</li>
+                </ul>
+                <p><strong>支持的格式：</strong> ${this.imageExtensions.join(', ').toUpperCase()}</p>
+                <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer;">重新加载</button>
+            </div>
+        `;
+    }
+    
+    /**
      * 显示错误信息
      */
     showError(message) {
@@ -226,7 +289,9 @@ class ImageToPdfConverter {
      * 重新加载图片
      */
     reloadImages() {
-        this.loadImages();
+        if (!this.isLoading) {
+            this.loadImages();
+        }
     }
     
     /**

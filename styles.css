@@ -128,6 +128,54 @@ body {
     font-size: 16px;
 }
 
+.error h3 {
+    color: #c0392b;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.error p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.error ul {
+    margin: 20px 0;
+    padding-left: 20px;
+}
+
+.error li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.error code {
+    background: rgba(231, 76, 60, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.error button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.error button:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
 .export-button {
     position: fixed;
     top: 30px;
@@ -255,5 +303,14 @@ body {
     .export-button button {
         padding: 12px 20px;
         font-size: 14px;
+    }
+    
+    .error {
+        padding: 20px;
+        font-size: 14px;
+    }
+    
+    .error h3 {
+        font-size: 1.3rem;
     }
 } 
