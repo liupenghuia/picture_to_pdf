@@ -14,6 +14,12 @@ const CONFIG = {
     // 加载延迟（毫秒）
     LOAD_DELAY: 100,
     
+    // 最大连续失败次数
+    MAX_CONSECUTIVE_FAILURES: 5,
+    
+    // 最大预期图片数量
+    MAX_EXPECTED_IMAGES: 20,
+    
     // 打印设置
     PRINT_SETTINGS: {
         silent: false,
@@ -32,11 +38,12 @@ const CONFIG = {
     
     // UI设置
     UI: {
-        showImageInfo: true,
-        showProgressBar: true,
-        showStats: true,
-        enableKeyboardShortcuts: true,
-        enableLazyLoading: true
+        showImageInfo: true,        // 是否显示图片信息（尺寸、大小）
+        showProgressBar: true,      // 是否显示进度条
+        showStats: true,            // 是否显示统计信息
+        enableKeyboardShortcuts: true,  // 是否启用键盘快捷键
+        enableLazyLoading: true,    // 是否启用图片懒加载
+        showLoadingDetails: false   // 是否显示详细加载信息
     },
     
     // 主题设置
@@ -53,6 +60,12 @@ const CONFIG = {
         mobile: 768,
         tablet: 1024,
         desktop: 1200
+    },
+    
+    // 调试设置
+    DEBUG: {
+        enableConsoleLog: true,     // 是否启用控制台日志
+        showLoadingTime: false      // 是否显示加载时间
     }
 };
 

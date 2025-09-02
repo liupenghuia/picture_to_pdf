@@ -5,7 +5,13 @@
 
 class ImageToPdfConverter {
     constructor() {
-        this.imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
+        // 使用配置文件中的设置
+        this.imageExtensions = CONFIG.IMAGE_EXTENSIONS;
+        this.imageFolder = CONFIG.IMAGE_FOLDER;
+        this.loadDelay = CONFIG.LOAD_DELAY;
+        this.maxConsecutiveFailures = CONFIG.MAX_CONSECUTIVE_FAILURES;
+        this.maxExpectedImages = CONFIG.MAX_EXPECTED_IMAGES;
+        
         this.imageContainer = document.getElementById('imageContainer');
         this.exportButton = document.getElementById('exportButton');
         this.progressBar = document.getElementById('progressBar');
@@ -28,11 +34,13 @@ class ImageToPdfConverter {
     
     bindEvents() {
         // 键盘快捷键
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'r' || e.key === 'R') {
-                this.reloadImages();
-            }
-        });
+        if (CONFIG.UI.enableKeyboardShortcuts) {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') {
+                    this.reloadImages();
+                }
+            });
+        }
         
         // 导出按钮事件
         this.exportButton.addEventListener('click', () => {
@@ -73,15 +81,12 @@ class ImageToPdfConverter {
      */
     async loadImagesSequentially() {
         let consecutiveFailures = 0;
-        const maxConsecutiveFailures = 5; // 连续失败5次后停止
-        let lastSuccessfulImage = 0; // 记录最后一张成功加载的图片编号
         
-        while (consecutiveFailures < maxConsecutiveFailures) {
+        while (consecutiveFailures < this.maxConsecutiveFailures) {
             const imageLoaded = await this.tryLoadImage(this.currentImageNumber);
             
             if (imageLoaded) {
                 consecutiveFailures = 0; // 重置失败计数
-                lastSuccessfulImage = this.currentImageNumber;
                 this.currentImageNumber++;
             } else {
                 consecutiveFailures++;
@@ -91,9 +96,14 @@ class ImageToPdfConverter {
             // 如果连续失败次数过多，可能已经到达图片末尾
             if (consecutiveFailures >= 3) {
                 // 再尝试几个数字，确保不是临时问题
-                if (consecutiveFailures >= maxConsecutiveFailures) {
+                if (consecutiveFailures >= this.maxConsecutiveFailures) {
                     break;
                 }
+            }
+            
+            // 添加延迟避免过快请求
+            if (this.loadDelay > 0) {
+                await new Promise(resolve => setTimeout(resolve, this.loadDelay));
             }
         }
         
@@ -102,28 +112,12 @@ class ImageToPdfConverter {
     }
     
     /**
-     * 显示加载状态
-     */
-    showLoading() {
-        this.imageContainer.innerHTML = `
-            <div class="loading">正在搜索图片文件...</div>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-        `;
-        
-        // 重新获取进度条元素引用
-        this.progressBar = document.querySelector('.progress-bar');
-        this.progressFill = document.querySelector('.progress-fill');
-    }
-    
-    /**
      * 尝试加载单张图片
      */
     async tryLoadImage(imageNumber) {
         for (const ext of this.imageExtensions) {
             try {
-                const imagePath = `src/${imageNumber}.${ext}`;
+                const imagePath = `${this.imageFolder}${imageNumber}.${ext}`;
                 const imageData = await this.loadImage(imagePath);
                 
                 if (imageData) {
@@ -202,14 +196,23 @@ class ImageToPdfConverter {
         const img = document.createElement('img');
         img.src = imageData.src;
         img.alt = `图片 ${imageNumber}`;
-        img.loading = 'lazy'; // 懒加载
+        
+        // 根据配置决定是否启用懒加载
+        if (CONFIG.UI.enableLazyLoading) {
+            img.loading = 'lazy';
+        }
         
         const imageInfo = document.createElement('div');
         imageInfo.className = 'image-info';
         imageInfo.textContent = `图片 ${imageNumber} | ${imageData.width}×${imageData.height} | ${imageData.size}`;
         
         imageItem.appendChild(img);
-        imageItem.appendChild(imageInfo);
+        
+        // 根据配置决定是否显示图片信息
+        if (CONFIG.UI.showImageInfo) {
+            imageItem.appendChild(imageInfo);
+        }
+        
         this.imageContainer.appendChild(imageItem);
         
         // 存储图片信息
@@ -220,10 +223,9 @@ class ImageToPdfConverter {
      * 更新进度条
      */
     updateProgress() {
-        if (this.progressBar && this.progressFill) {
+        if (this.progressBar && this.progressFill && CONFIG.UI.showProgressBar) {
             // 使用当前检查的图片编号作为进度参考
-            const maxExpectedImages = 20; // 假设最多20张图片
-            const progress = (this.currentImageNumber / maxExpectedImages) * 100;
+            const progress = (this.currentImageNumber / this.maxExpectedImages) * 100;
             this.progressFill.style.width = `${Math.min(progress, 100)}%`;
         }
     }
@@ -232,15 +234,31 @@ class ImageToPdfConverter {
      * 更新统计信息
      */
     updateStats() {
-        if (this.statsElement) {
+        if (this.statsElement && CONFIG.UI.showStats) {
             const lastImageNumber = this.loadedImages > 0 ? this.currentImageNumber - 1 : 0;
-            const searchRange = `1-${Math.min(lastImageNumber + 5, 20)}`; // 显示搜索范围
+            const searchRange = `1-${Math.min(lastImageNumber + 5, this.maxExpectedImages)}`; // 显示搜索范围
             
             this.statsElement.innerHTML = `
                 已加载 ${this.loadedImages} 张图片 | 
                 搜索范围: ${searchRange} | 
                 按 R 键重新加载
             `;
+        }
+    }
+    
+    /**
+     * 显示加载状态
+     */
+    showLoading() {
+        this.imageContainer.innerHTML = `
+            <div class="loading">正在搜索图片文件...</div>
+            ${CONFIG.UI.showProgressBar ? '<div class="progress-bar"><div class="progress-fill"></div></div>' : ''}
+        `;
+        
+        // 重新获取进度条元素引用
+        if (CONFIG.UI.showProgressBar) {
+            this.progressBar = document.querySelector('.progress-bar');
+            this.progressFill = document.querySelector('.progress-fill');
         }
     }
     
@@ -266,7 +284,7 @@ class ImageToPdfConverter {
         this.imageContainer.innerHTML = `
             <div class="error">
                 <h3>未找到图片文件</h3>
-                <p>在 <code>src</code> 文件夹中搜索了编号 1-${this.currentImageNumber - 1} 的图片，但未找到任何文件。</p>
+                <p>在 <code>${this.imageFolder}</code> 文件夹中搜索了编号 1-${this.currentImageNumber - 1} 的图片，但未找到任何文件。</p>
                 <p>请确保文件夹中包含按数字顺序命名的图片文件：</p>
                 <ul style="text-align: left; display: inline-block; margin: 20px 0;">
                     <li>1.png, 1.jpg, 1.jpeg 等</li>
