@@ -74,12 +74,14 @@ class ImageToPdfConverter {
     async loadImagesSequentially() {
         let consecutiveFailures = 0;
         const maxConsecutiveFailures = 5; // 连续失败5次后停止
+        let lastSuccessfulImage = 0; // 记录最后一张成功加载的图片编号
         
         while (consecutiveFailures < maxConsecutiveFailures) {
             const imageLoaded = await this.tryLoadImage(this.currentImageNumber);
             
             if (imageLoaded) {
                 consecutiveFailures = 0; // 重置失败计数
+                lastSuccessfulImage = this.currentImageNumber;
                 this.currentImageNumber++;
             } else {
                 consecutiveFailures++;
@@ -94,6 +96,25 @@ class ImageToPdfConverter {
                 }
             }
         }
+        
+        // 更新总图片数为实际加载的数量
+        this.totalImages = this.loadedImages;
+    }
+    
+    /**
+     * 显示加载状态
+     */
+    showLoading() {
+        this.imageContainer.innerHTML = `
+            <div class="loading">正在搜索图片文件...</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        `;
+        
+        // 重新获取进度条元素引用
+        this.progressBar = document.querySelector('.progress-bar');
+        this.progressFill = document.querySelector('.progress-fill');
     }
     
     /**
@@ -200,7 +221,9 @@ class ImageToPdfConverter {
      */
     updateProgress() {
         if (this.progressBar && this.progressFill) {
-            const progress = (this.loadedImages / Math.max(this.currentImageNumber - 1, 1)) * 100;
+            // 使用当前检查的图片编号作为进度参考
+            const maxExpectedImages = 20; // 假设最多20张图片
+            const progress = (this.currentImageNumber / maxExpectedImages) * 100;
             this.progressFill.style.width = `${Math.min(progress, 100)}%`;
         }
     }
@@ -210,28 +233,15 @@ class ImageToPdfConverter {
      */
     updateStats() {
         if (this.statsElement) {
+            const lastImageNumber = this.loadedImages > 0 ? this.currentImageNumber - 1 : 0;
+            const searchRange = `1-${Math.min(lastImageNumber + 5, 20)}`; // 显示搜索范围
+            
             this.statsElement.innerHTML = `
                 已加载 ${this.loadedImages} 张图片 | 
-                当前进度: ${this.currentImageNumber - 1} | 
+                搜索范围: ${searchRange} | 
                 按 R 键重新加载
             `;
         }
-    }
-    
-    /**
-     * 显示加载状态
-     */
-    showLoading() {
-        this.imageContainer.innerHTML = `
-            <div class="loading">正在加载图片...</div>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-        `;
-        
-        // 重新获取进度条元素引用
-        this.progressBar = document.querySelector('.progress-bar');
-        this.progressFill = document.querySelector('.progress-fill');
     }
     
     /**
@@ -256,13 +266,15 @@ class ImageToPdfConverter {
         this.imageContainer.innerHTML = `
             <div class="error">
                 <h3>未找到图片文件</h3>
-                <p>请确保 <code>src</code> 文件夹中包含从1开始的图片文件：</p>
+                <p>在 <code>src</code> 文件夹中搜索了编号 1-${this.currentImageNumber - 1} 的图片，但未找到任何文件。</p>
+                <p>请确保文件夹中包含按数字顺序命名的图片文件：</p>
                 <ul style="text-align: left; display: inline-block; margin: 20px 0;">
                     <li>1.png, 1.jpg, 1.jpeg 等</li>
                     <li>2.png, 2.jpg, 2.jpeg 等</li>
                     <li>3.png, 3.jpg, 3.jpeg 等</li>
                 </ul>
                 <p><strong>支持的格式：</strong> ${this.imageExtensions.join(', ').toUpperCase()}</p>
+                <p><strong>搜索范围：</strong> 1-${this.currentImageNumber - 1}</p>
                 <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 10px; cursor: pointer;">重新加载</button>
             </div>
         `;
